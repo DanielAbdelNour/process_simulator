@@ -1,5 +1,7 @@
 # Process Simulation Tool
 
+![alt text](screenshot.png "Example process flow")
+
 ## Introduction
 The process simulator is a tool that allows users to investigate the impacts of policy/process/business changes via a simple click, drag and drop user interface.
 Users are able to use the simulator to develop models. A model is represented by a set of processes and links between processes wherein each element of the model contains values configured by the user. These values dictate the eventual outputs of the model.
