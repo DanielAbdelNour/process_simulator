@@ -1,0 +1,218 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src='js/libs/d3.min.js'></script>
+    <script src='js/libs/vue.min.js'></script>
+    <script src='js/libs/chance.min.js'></script>
+    <script src='js/libs/jstat.min.js'></script>
+    <script src='js/libs/plotly-latest.min.js'></script>
+    <script src='js/libs/math.min.js'></script>
+
+    <link rel="stylesheet" type="text/css" href="css/bulma.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    </link>
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"
+        integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+    <script defer src='js/app.js'></script>
+    <script defer src='js/main.js'></script>
+
+    <title>Process Simulator</title>
+</head>
+
+<body>
+
+
+    <div id='app'>
+
+        <!-- <div v-if="show_modal" id="modal">
+                    <div id="modal-header">Click here to move</div>
+                    <p>move me!</p>
+                    <div id='myplot'></div>
+            </div> -->
+        <!-- <greeting></greeting> -->
+
+        <div class='app-container'>
+            <div class='header'>
+                <h3 class='title'>PROCESS SIMULATION TOOL</h3>
+            </div>
+            <div class='utils-container'>
+                <div class='util-controls'>
+                    <button id='new' class='button-input tight util-btn' v-on:click='console.log("new")'><i
+                            class='fa fa-file'></i></button>
+                    <button id='load' type='file' class='button-input tight util-btn' v-on:click='loadSimulation()'><i
+                            class='fa fa-folder'></i></button>
+                    <button id='save' class='button-input tight util-btn' v-on:click='saveSimulation(model_name)'><i
+                            class='fa fa-save'></i></button>
+                    <input class='inline parameter-control' type="text" placeholder="enter model name"
+                        v-model='model_name' />
+                </div>
+            </div>
+            <div class='graph'></div>
+            <div class='graph-controls'>
+                <div class='left-controls'>
+                    <div v-if='selected_node' class='node-controls padded'>
+                        <div class='named-input'>
+                            <p class='name'>name</p>
+                            <input type='text' class='parameter-control'
+                                v-model='d3.select(selected_node).data()[0].name' onchange="update()">
+                        </div>
+                        <div class="named-input">
+                            <p class='name'>self-loop weight</p>
+                            <input class='parameter-control' type='number' placeholder="self-loop weight" value=0
+                                v-model='d3.select(selected_node).data()[0].pdef.selfloop'>
+                        </div>
+                        <div class='named-input'>
+                            <p class='name'>process time settings</p>
+                            <!-- <input type='number' class='parameter-control'
+                                v-model='d3.select(selected_node).data()[0].pdef.tproc' onchange="update()"> -->
+                            <div class='input-row-params'>
+                                <select class='parameter-control left-input'
+                                    v-model='d3.select(selected_node).data()[0].pdef.tproc_dist.name'
+                                    v-on:change='changeDist()'>
+                                    <option value="exponential">exponential</option>
+                                    <option selected value="gamma">gamma</option>
+                                    <option value="normal">normal</option>
+                                </select>
+                                <input class='parameter-control middle-input' type='number' placeholder="parameter 1"
+                                    v-model='d3.select(selected_node).data()[0].pdef.tproc_dist.parameter1'>
+                                <input class='parameter-control right-input' type='number' placeholder="parameter 2"
+                                    v-model='d3.select(selected_node).data()[0].pdef.tproc_dist.parameter2'>
+                                <button class='button-input tiny' onclick="showDistribution()"><i
+                                        class="fa fa-bar-chart"></i></button>
+                            </div>
+                        </div>
+                        <div class='named-input'>
+                            <p class='name'>operator time settings</p>
+                            <!-- <input type='number' class='parameter-control'
+                                    v-model='d3.select(selected_node).data()[0].pdef.tproc' onchange="update()"> -->
+                            <div class='input-row-params'>
+                                <select class='parameter-control left-input'
+                                    v-model='d3.select(selected_node).data()[0].pdef.tso_dist.name'>
+                                    <option value="exponential">exponential</option>
+                                    <option selected value="gamma">gamma</option>
+                                    <option value="normal">normal</option>
+                                </select>
+                                <input class='parameter-control middle-input' type='number' placeholder="parameter 1"
+                                    v-model='d3.select(selected_node).data()[0].pdef.tso_dist.parameter1'>
+                                <input class='parameter-control right-input' type='number' placeholder="parameter 2"
+                                    v-model='d3.select(selected_node).data()[0].pdef.tso_dist.parameter2'>
+                                <button class='button-input tiny' onclick="showDistribution()"><i
+                                        class="fa fa-bar-chart"></i></button>
+                            </div>
+                        </div>
+                        <!-- <div class='named-input'>
+                            <p class='name'>avg operator time (hrs)</p>
+                            <input type='number' class='parameter-control'
+                                v-model='d3.select(selected_node).data()[0].pdef.tso' onchange="update()">
+                        </div> -->
+                        <div class='named-input'>
+                            <p class='name inline'>total processed:</p>
+                            <span>{{d3.select(selected_node).data()[0].logs.ntotal}}</span>
+                        </div>
+                        <!-- <div class='named-input'>
+                            <p class='name'>max processes</p>
+                            <input type='number' class='parameter-control'
+                                v-model='d3.select(selected_node).data()[0].pdef.maxproc' onchange="update()">
+                        </div> -->
+                    </div>
+
+                    <div v-if='selected_link' class='link-controls padded'>
+                        <div class='named-input'>
+                            <p class='name'>name</p>
+                            <p class='weight-name'>{{d3.select(selected_link).data()[0].name}}</p>
+                        </div>
+                        <div class='named-input'>
+                            <p class='name'>conditions</p>
+                            <div class="input-row-params3">
+                                <select class='parameter-control left-input'
+                                    v-model='d3.select(selected_link).data()[0].condition_type'
+                                    :disabled="d3.select(selected_link).data()[0].condition == false">
+                                    <option value="visited">visited</option>
+                                    <option selected value="not_visited">not visited</option>
+                                </select>
+                                <select class='parameter-control right-input'
+                                    v-model='d3.select(selected_link).data()[0].condition_target'
+                                    :disabled="d3.select(selected_link).data()[0].condition == false">
+                                    <option v-for="node in flow_data.nodes" :value="node.id">{{node.name}}</option>
+                                </select>
+                                <input class='checkbox-element' type='checkbox' value='false'
+                                    v-model='d3.select(selected_link).data()[0].condition' />
+                            </div>
+                        </div>
+                        <div class='named-input'>
+                            <p class='name'>path weight</p>
+                            <input type='number' class='parameter-control'
+                                v-model='d3.select(selected_link).data()[0].path_prob' onchange='update()'>
+                        </div>
+                    </div>
+
+                    <div v-if='!selected_node && !selected_link' class='simulation-controls padded'>
+                        <div class='named-input'>
+                            <p class='name inline'>avg process time (hrs):</p>
+                            <span>{{avg_proc_time}}</span>
+                        </div>
+                        <div class='named-input'>
+                            <p class='name inline'>avg operator time (hrs):</p>
+                            <span>{{avg_so_time}}</span>
+                        </div>
+                    </div>
+                    <div id='scene-control-type'>
+                        <select v-model='scene_control_type'>
+                            <option value='simulation'>simulation</option>
+                            <option value='analysis'>analysis</option>
+                        </select>
+                    </div>
+                    <div class='scene-controls' v-if="scene_control_type=='simulation'">
+                        <input class='number-input' type="number" v-model='n_sim_tokens' placeholder="number of tokens">
+                        <button class='button-input' onclick="runModel()">simulate</button>
+                        <!-- <button class='button-input' onclick="runHomogenousPoissonProcess(T_length=72, lambda=5)">simulate</button> -->
+                        <button class='button-input' onclick="addToken()">boop!</button>
+                    </div>
+                    <div class='analysis-controls' v-if="scene_control_type=='analysis'">
+                        <select v-model="heatmap_mode" v-on:change='setHeatmap()'>
+                            <option>process time</option>
+                            <option>effort</option>
+                            <option>backlog</option>
+                        </select>
+                        <input class='checkbox is-pulled-right' type="checkbox" v-model='heatmap'
+                            v-on:change='setHeatmap()'>
+                    </div>
+                </div>
+                <div class='right-controls'>
+                    <div id='chart1'>
+
+                    </div>
+                    <div id='chart2'>
+                        <select v-model="chart2_type">
+                            <option value='sequence_map'>sequence map</option>
+                            <option value='total_effort'>total effort</option>
+                            <option value='total_processing'>total processing</option>
+                        </select>
+                        <div v-if='chart2_type=="sequence_map"' class="top-paths-list">
+                            <path-tag v-for='(ez, i) in getNodeHistory(selected_node, 10)' :tag_title=ez.seq
+                                :tag_count=ez.count :tag_transition_mean=ez.seq_transition_mean
+                                :tag_effort_mean=ez.seq_effort_mean v-on:click.native='selectTagSequence(i)'>
+                            </path-tag>
+                        </div>
+                        <barchart v-if='chart2_type=="total_effort"' :node_data=flow_data.nodes></barchart>
+                    </div>
+                    <div id='chart3'>
+                        <div class="value-box-container">
+                            <value-box box_title='avg backlog' :box_value=avg_backlog.toFixed(0)></value-box>
+                            <value-box box_title='avg process time (days)' :box_value='avg_process_time.toFixed(2)'>
+                            </value-box>
+                            <value-box box_title='avg effort (mins)' :box_value='avg_effort.toFixed(2)'></value-box>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
